@@ -60,6 +60,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+// HttpClient para RapidAPI Unit Conversion
+builder.Services.AddHttpClient("RapidApiUnit", client =>
+{
+    var cfg = builder.Configuration.GetSection("RapidApi");
+    var host = cfg["Host"];
+    var key  = cfg["Key"];
+
+    client.DefaultRequestHeaders.Add("x-rapidapi-host", host);
+    client.DefaultRequestHeaders.Add("x-rapidapi-key",  key);
+});
+
+// Service DI
+builder.Services.AddScoped<CostealoBackend.Services.Interfaces.IUnitConversionService,
+    CostealoBackend.Services.UnitConversionService>();
 
 var app = builder.Build();
 
