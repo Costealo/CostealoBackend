@@ -22,9 +22,9 @@ namespace CostealoBackend.Services
 
         public async Task<UnitConversionResponseDto> ConvertAsync(UnitConversionRequestDto req)
         {
-            var type = (req.Type ?? "").Trim().ToLower();
-            var fromUnit = (req.FromUnit ?? "").Trim().ToLower();
-            var toUnit = (req.ToUnit ?? "").Trim().ToLower();
+            var type = (req.Type ?? "").Trim().ToLowerInvariant();
+            var fromUnit = (req.FromUnit ?? "").Trim().ToLowerInvariant();
+            var toUnit = (req.ToUnit ?? "").Trim().ToLowerInvariant();
             var fromValue = req.FromValue;
 
             var url = $"{_config["RapidApi:BaseUrl"]}/convert" +
@@ -41,15 +41,30 @@ namespace CostealoBackend.Services
             if (!response.IsSuccessStatusCode)
                 throw new ApplicationException($"RapidAPI error {(int)response.StatusCode}: {raw}");
 
-            /*
-             * Respuesta típica:
-             * { "value": 90.7185, "unit": "kilogram" }
-             */
             using var doc = JsonDocument.Parse(raw);
             var root = doc.RootElement;
 
-            var value = root.TryGetProperty("value", out var v) ? v.GetDouble() :
-                        root.TryGetProperty("result", out var r) ? r.GetDouble() : double.NaN;
+            // --- Conversión flexible: acepta string o number ---
+            double ParseFlexible(JsonElement el)
+            {
+                if (el.ValueKind == JsonValueKind.Number)
+                    return el.GetDouble();
+                if (el.ValueKind == JsonValueKind.String &&
+                    double.TryParse(el.GetString(), System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out var d))
+                    return d;
+                return double.NaN;
+            }
+
+            double value = double.NaN;
+
+            // Intentamos leer varios posibles nombres de campo
+            if (root.TryGetProperty("value", out var v))
+                value = ParseFlexible(v);
+            else if (root.TryGetProperty("result", out var r))
+                value = ParseFlexible(r);
+            else if (root.TryGetProperty("toValue", out var t))
+                value = ParseFlexible(t);
 
             if (double.IsNaN(value))
                 throw new ApplicationException($"Respuesta inesperada de RapidAPI: {raw}");
