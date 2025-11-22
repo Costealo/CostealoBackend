@@ -11,6 +11,8 @@ using Costealo.Services.Workbooks;
 using Costealo.Services.Conversions;
 using Costealo.Services.Storage;
 using Costealo.Services.Parsing;
+using Costealo.Services.Validation;
+using Costealo.Services.Import;
 
 // Si vas a usar el servicio RapidAPI (CostealoBackend.Services.UnitConversionService)
 using CostealoBackend.Services.Interfaces;
@@ -51,6 +53,9 @@ builder.Services.AddSwaggerGen(c =>
 
 // DI servicios internos
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+builder.Services.AddScoped<IImportValidationService, ImportValidationService>();
+builder.Services.AddScoped<IUrlImportService, UrlImportService>();
 builder.Services.AddScoped<IWorkbookService, WorkbookService>();
 builder.Services.AddScoped<IUnitConversionService, UnitConversionService>(); // conversión local (kg↔g, l↔ml, etc.)
 builder.Services.AddScoped<IBlobService, AzureBlobService>();
