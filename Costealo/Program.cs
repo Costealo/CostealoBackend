@@ -21,13 +21,9 @@ using RapidSvc = CostealoBackend.Services.UnitConversionService;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
-// Ejemplo para SQL Server (cuando cambies):
-// builder.Services.AddDbContext<AppDbContext>(o =>
-//     o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// SQL Server Azure Database
+builder.Services.AddDbContext<AppDbContext>(o =>
+    o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllers();
 builder.Services.AddCors(o =>
