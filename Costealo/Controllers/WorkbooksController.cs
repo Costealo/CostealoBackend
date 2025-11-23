@@ -17,6 +17,28 @@ public class WorkbooksController(AppDbContext db, IWorkbookService svc, IUnitCon
 {
   private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+  // GET: api/workbooks
+  [HttpGet]
+  public async Task<ActionResult<IEnumerable<Workbook>>> GetAll()
+  {
+    var workbooks = await db.Workbooks
+      .Where(w => w.UserId == CurrentUserId)
+      .OrderByDescending(w => w.CreatedAt)
+      .ToListAsync();
+    return Ok(workbooks);
+  }
+
+  // GET: api/workbooks/5
+  [HttpGet("{id}")]
+  public async Task<ActionResult> Get(int id)
+  {
+    var w = await db.Workbooks.Include(x => x.Items)
+      .FirstOrDefaultAsync(x => x.Id == id && x.UserId == CurrentUserId);
+    if (w == null) return NotFound();
+    return Ok(w);
+  }
+
+  // POST: api/workbooks
   [HttpPost]
   public async Task<ActionResult<int>> Create(WorkbookCreateDto dto)
   {
@@ -38,6 +60,7 @@ public class WorkbooksController(AppDbContext db, IWorkbookService svc, IUnitCon
     return Ok(w.Id);
   }
 
+  // PUT: api/workbooks/5
   [HttpPut("{id}")]
   public async Task<ActionResult> Update(int id, WorkbookUpdateDto dto)
   {
@@ -56,6 +79,23 @@ public class WorkbooksController(AppDbContext db, IWorkbookService svc, IUnitCon
     return Ok();
   }
 
+  // DELETE: api/workbooks/5
+  [HttpDelete("{id}")]
+  public async Task<ActionResult> Delete(int id)
+  {
+    var w = await db.Workbooks
+      .Include(x => x.Items)
+      .FirstOrDefaultAsync(x => x.Id == id && x.UserId == CurrentUserId);
+    if (w == null) return NotFound();
+
+    db.WorkbookItems.RemoveRange(w.Items);
+    db.Workbooks.Remove(w);
+    await db.SaveChangesAsync();
+
+    return NoContent();
+  }
+
+  // PUT: api/workbooks/5/items/bulk
   [HttpPut("{id}/items/bulk")]
   public async Task<ActionResult> UpsertItems(int id, List<WorkbookItemUpsertDto> items)
   {
@@ -93,19 +133,12 @@ public class WorkbooksController(AppDbContext db, IWorkbookService svc, IUnitCon
     return Ok();
   }
 
-  [HttpGet("{id}")]
-  public async Task<ActionResult> Get(int id)
-  {
-    var w = await db.Workbooks.Include(x => x.Items)
-      .FirstOrDefaultAsync(x => x.Id == id && x.UserId == CurrentUserId);
-    if (w == null) return NotFound();
-    return Ok(w);
-  }
-
+  // GET: api/workbooks/5/summary
   [HttpGet("{id}/summary")]
   public async Task<ActionResult<WorkbookSummaryDto>> Summary(int id)
     => Ok(await svc.GetSummaryAsync(id));
 
+  // GET: api/workbooks/5/pile
   [HttpGet("{id}/pile")]
   public async Task<ActionResult<IEnumerable<WorkbookPileItemDto>>> Pile(
     int id, string? q, string order = "cost", string dir = "desc")
