@@ -32,14 +32,18 @@ public class TokenService(IConfiguration cfg) : ITokenService
             new Claim(ClaimTypes.Email, email)
         };
 
-        var token = new JwtSecurityToken(
-            issuer: cfg["Jwt:Issuer"],
-            audience: cfg["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddDays(7),
-            signingCredentials: creds
-        );
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddDays(7),
+            Issuer = cfg["Jwt:Issuer"],
+            Audience = cfg["Jwt:Audience"],
+            SigningCredentials = creds
+        };
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+
+        return tokenHandler.WriteToken(token);
     }
 }
