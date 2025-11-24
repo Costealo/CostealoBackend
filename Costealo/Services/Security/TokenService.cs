@@ -11,16 +11,35 @@ public class TokenService(IConfiguration cfg) : ITokenService
 {
     public string CreateToken(int userId, string role, string email)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(cfg["Jwt:Key"] ?? "dev-key-please-change"));
+        var rawKey = cfg["Jwt:Key"] ?? "dev-key-please-change";
+        byte[] keyBytes;
+        try
+        {
+            keyBytes = Convert.FromBase64String(rawKey);
+        }
+        catch
+        {
+            keyBytes = Encoding.UTF8.GetBytes(rawKey);
+        }
+
+        var key = new SymmetricSecurityKey(keyBytes);
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(ClaimTypes.Role, role),
             new Claim(ClaimTypes.Email, email)
         };
-        var token = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddDays(7),
-            signingCredentials: creds);
+
+        var token = new JwtSecurityToken(
+            issuer: cfg["Jwt:Issuer"],
+            audience: cfg["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(7),
+            signingCredentials: creds
+        );
+
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
