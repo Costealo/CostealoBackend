@@ -3,3 +3,16 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+
+# Temporary SQL debug/utility scripts
+*.sql
+!Costealo/**/*.sql
+DIAGNOSTICO-AZURE.sql
+EJECUTAR_SCRIPT.md
+MIGRATION_STEPS.md
+SOLUCION-FINAL.sql
+VERIFICACION-SIMPLE.sql
+check-migration.sql
+marcar-migracion-aplicada.sql
+verificar-migracion.sql
+verify-columns.sql
